@@ -1,0 +1,49 @@
+{
+  "name": "file-manager-api",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "db:seed": "NODE_ENV=development npx prisma db seed",
+    "db:reset": "rm -rf ./.files && NODE_ENV=development npx prisma migrate reset",
+    "dev": "NODE_ENV=development nodemon app.ts",
+    "start": "tsc --build && node dist/app.js",
+    "start:clean": "rm -rf dist && tsc --build && node dist/app.js",
+    "format": "prettier . --write",
+    "lint": "eslint . --fix --ext .ts,.js --max-warnings 0",
+    "type-check": "tsc -p .",
+    "build": "tsc --build",
+    "build:clean": "rm -rf dist && tsc --build"
+  },
+  "prisma":{
+    "seed": "ts-node seed.ts"
+  },
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@types/express": "^4.17.13",
+    "@types/luxon": "^2.0.5",
+    "@types/node": "^16.4.13",
+    "@typescript-eslint/eslint-plugin": "^4.29.3",
+    "@typescript-eslint/parser": "^4.29.3",
+    "dotenv": "^10.0.0",
+    "eslint": "^7.32.0",
+    "eslint-config-prettier": "^8.3.0",
+    "eslint-plugin-prettier": "^3.4.1",
+    "nodemon": "^2.0.12",
+    "prettier": "^2.3.2",
+    "ts-node": "^10.2.1",
+    "typescript": "^4.3.5"
+  },
+  "dependencies": {
+    "@aws-sdk/client-s3": "^3.39.0",
+    "@aws-sdk/s3-request-presigner": "^3.39.0",
+    "@prisma/client": "^3.3.0",
+    "express": "^4.17.1",
+    "express-graphql": "^0.12.0",
+    "graphql": "^15.7.2",
+    "graphql-modules": "^2.0.0",
+    "luxon": "^2.0.2",
+    "nanoid": "^3.1.30"
+  }
+}
