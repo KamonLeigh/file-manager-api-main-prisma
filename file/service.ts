@@ -46,9 +46,7 @@ export async function createFileRecord(client: PrismaClient, file: CreateFileInp
     data: { 
         directoryId
     },
-    include: {
-        version: true
-    }
+    include: { version: true}
     })
  }
 
@@ -57,12 +55,12 @@ export async function createFileRecord(client: PrismaClient, file: CreateFileInp
  }
 
  export async function  deleteFile(client: PrismaClient, id: File["id"]):Promise<boolean> {
-    //const fileVersions =  await client.fileVersion.findMany({ where: { fileId: id}})
-    const fileVersions = await client.file.findUnique({ where: { id }}).version();
+    const fileVersions =  await client.fileVersion.findMany({ where: { fileId: id}})
+    // const fileVersions = await client.file.findUnique({ where: { id }}).version();
 
     await client.$transaction([
-        client.file.delete({ where: { id }}),
-        client.fileVersion.deleteMany({ where: { fileId: id}})
+        client.fileVersion.deleteMany({ where: { fileId: id}}),
+        client.file.delete({ where: { id }})
     ])
 
     for (const version of fileVersions) {

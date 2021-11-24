@@ -55,7 +55,7 @@ export const fileModule = createModule({
             createFile: async (_: unknown, { input }: { input: fileService.CreateFileInput}): Promise<{file: File, url: string }>  => {
                 return await fileService.createFileRecord(prismaClient(), input)
             },
-            moveFile: async(_: unknown, { id, directoryId }: { id: File["id"], directoryId: File["directoryId"] }):Promise<File> => {
+            moveFile: async (_: unknown, { id, directoryId }: { id: File["id"], directoryId: File["directoryId"] }):Promise<File> => {
                 return await fileService.moveFile(prismaClient(), id, directoryId);
             },
             renameFile: async(_: unknown, { id, name }: { id: File["id"], name: File["name"] }):Promise<File> => {
