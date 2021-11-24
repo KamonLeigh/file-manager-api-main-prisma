@@ -19,9 +19,12 @@ export const directoryModule = createModule({
 
             extend type Query {
                 getAllDirectories: [Directory]!
+                getDirectory(id: ID): Directory
             }
             type Mutation {
                 createDirectory(name: String!, parentId: String): Directory!
+                renameDirectory(id: ID!, name: String!): Directory!
+                deleteDirectory(id: ID!): Boolean!
             }
         `
     ],
