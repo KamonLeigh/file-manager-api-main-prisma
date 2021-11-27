@@ -1,4 +1,5 @@
 import { Directory, PrismaClient } from '@prisma/client';
+import { deleteFile } from '../file';
 
 export async function createDirectory(client: PrismaClient, name: Directory["name"], parentId: Directory["parentId"]): Promise<Directory> {
     console.log(name, parentId)
@@ -22,7 +23,7 @@ export async function getDirectory(client: PrismaClient, id: Directory["id"]): P
     return await client.directory.findUnique({ where: { id }, include: { files: true, directories: true}})
 }
 
-export async function renameDirectory(client: PrismaClient, id: Directory["id"], name: Directory["name"]): Promise<Directory | null> {
+export async function renameDirectory(client: PrismaClient, id: Directory["id"], name: Directory["name"]): Promise<Directory> {
     if (name.toLowerCase() === 'root') {
         throw new Error("Directory 'root' is reserved")
     }
@@ -35,7 +36,16 @@ export async function renameDirectory(client: PrismaClient, id: Directory["id"],
     return await client.directory.update({ where: { id }, data: { name }, include: { files: true, directories: true } })
 }
 
-export async function deleteDirectory (client: PrismaClient, id: Directory["id"]): Promise<boolean> {
-    await client.directory.delete({ where: { id }})
-    return true;
-}
+export async function deleteDirectory(
+    client: PrismaClient,
+    id: Directory["id"]
+  ): Promise<boolean> {
+    const files = await client.file.findMany({
+      where: { directoryId: id },
+    })
+    for (const file of files) {
+      await deleteFile(client, file.id)
+    }
+    await client.directory.delete({ where: { id } })
+    return true
+  }
