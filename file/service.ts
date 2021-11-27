@@ -70,4 +70,17 @@ export async function createFileRecord(client: PrismaClient, file: CreateFileInp
     return true;
 
  }
+
+ export async function findFiles(client:PrismaClient, query: string ):Promise<File[]> {
+   return await client.file.findMany({
+        where: {
+            name: {
+               contains: query,
+               mode:  "insensitive"
+            }
+        },
+        orderBy: [{ name: "asc"}],
+        include: { version: true }
+    })
+ }
     

@@ -4,10 +4,11 @@ import { FileVersion, Directory, File } from "@prisma/client";
 import express, { Request} from "express";
 import { graphqlHTTP } from 'express-graphql';
 import { createApplication, createModule, gql} from 'graphql-modules';
-import { directoryModule } from "./directory";
+import { directoryModule, findDirectories } from "./directory";
 import { downloadLocalFile, uploadLocalFile } from "./bucket";
-import { fileModule } from "./file";
+import { fileModule, findFiles } from "./file";
 import { fileVersionModule } from "./fileVersion";
+import { prismaClient } from "./prisma";
 
 export interface Pagination {
   pageLength: number
@@ -54,7 +55,11 @@ const mainModule = createModule({
       }
     },
     Query: {
-      searchFiles: () => { return []}
+      searchFiles: async (_: unknown, { query }: { query: string }): Promise<Array< Directory | File>> => {
+        const directories = await findDirectories(prismaClient(), query);
+        const files = await findFiles(prismaClient(), query);
+        return [...directories, ...files]
+      }
     }
   }
 })
