@@ -16,6 +16,7 @@ export const directoryModule = createModule({
                 updatedAt:   String!
                 files: [File]!
                 directories: [Directory]!
+                ancestors: [String]!
             }
 
             extend type Query {

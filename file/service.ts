@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import { File, FileVersion, PrismaClient, Prisma } from ".prisma/client";
 import { CreateFileVersionInput} from '../fileVersion';
 import { getBucket } from "../bucket/bucket";
@@ -12,11 +13,16 @@ Omit<CreateFileVersionInput, "fileId" | "key"> & { key?: FileVersion["key"]}
 export async function createFileRecord(client: PrismaClient, file: CreateFileInput): Promise<{ file: File, url: string}> {  
     const { name, directoryId, mimeType, size, key: keyInput } = file;
 
+    const directory = await client.directory.findUnique({ where: { id: directoryId }});
+
+    const ancestors = directory?.ancestors ?? [];
+
     const key = keyInput ?? (await generateId())
 
     const data = {
         name,
         directoryId,
+        ancestors: [...ancestors, directoryId],
         version: {
             create: {
                 name,

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import { Directory, PrismaClient } from '@prisma/client';
 import { deleteFile } from '../file';
 
@@ -7,10 +8,18 @@ export async function createDirectory(client: PrismaClient, name: Directory["nam
     if (name === "root") {
         throw new Error("Directory name 'root' is reserved")
     }
+
+    const parent  = parentId
+        ? await client.directory.findUnique({ where: { id: parentId}})
+        : null ;
+    
+    const ancestors = parent?.ancestors ?? []
+
     const directory = await client.directory.create({
         data: {
             name,
-            parentId
+            parentId,
+            ancestors: [...ancestors, ...(parentId ? [parentId] : [])]
         }
     })
 
