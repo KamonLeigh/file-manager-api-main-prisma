@@ -50,12 +50,17 @@ export async function deleteDirectory(
     id: Directory["id"]
   ): Promise<boolean> {
     const files = await client.file.findMany({
-      where: { directoryId: id },
+      where: { ancestors: { has: id} },
     })
     for (const file of files) {
       await deleteFile(client, file.id)
     }
-    await client.directory.delete({ where: { id } })
+
+    await client.$transaction([
+        client.directory.deleteMany({ where: { ancestors: { has: id}}}),
+        client.directory.delete({ where: { id }})
+    ])
+
     return true
   }
 
