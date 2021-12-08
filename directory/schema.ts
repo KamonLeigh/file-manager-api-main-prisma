@@ -27,6 +27,7 @@ export const directoryModule = createModule({
                 createDirectory(name: String!, parentId: String): Directory!
                 renameDirectory(id: ID!, name: String!): Directory!
                 deleteDirectory(id: ID!): Boolean!
+                moveDirectory(id: ID!, parentId: ID):Directory!
             }
         `
     ],
@@ -43,12 +44,16 @@ export const directoryModule = createModule({
             createDirectory: async (_: unknown, { name, parentId}:{ name: Directory['name'], parentId: Directory['parentId'] }) => {
                 return await directoryService.createDirectory(prismaClient(), name, parentId)
             },
-            renameDirectory: async (_: unknown, { id, name}: { id: Directory['id'], name: Directory['name'] }):Promise<Directory > => {
+            renameDirectory: async (_: unknown, { id, name}: { id: Directory['id'], name: Directory['name'] }):Promise<Directory | null > => {
                 return await directoryService.renameDirectory(prismaClient(), id, name)
             },
             deleteDirectory: async (_: unknown, { id }: { id: Directory['id']}):Promise<boolean> => {
                 return await directoryService.deleteDirectory(prismaClient(), id)
-            }
+            },
+            moveDirectory: async (_: unknown, { id, parentId}: { id: Directory['id'], parentId: Directory['id'] }):Promise<Directory | null > => {
+                return await directoryService.moveDirectory(prismaClient(), id, parentId)
+            },
+           
         }
     }
 });

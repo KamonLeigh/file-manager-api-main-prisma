@@ -32,7 +32,7 @@ export async function getDirectory(client: PrismaClient, id: Directory["id"]): P
     return await client.directory.findUnique({ where: { id }, include: { files: true, directories: true}})
 }
 
-export async function renameDirectory(client: PrismaClient, id: Directory["id"], name: Directory["name"]): Promise<Directory> {
+export async function renameDirectory(client: PrismaClient, id: Directory["id"], name: Directory["name"]): Promise<Directory | null> {
     if (name.toLowerCase() === 'root') {
         throw new Error("Directory 'root' is reserved")
     }
@@ -43,6 +43,126 @@ export async function renameDirectory(client: PrismaClient, id: Directory["id"],
         throw new Error("Root directory may not be renamed")
     }
     return await client.directory.update({ where: { id }, data: { name }, include: { files: true, directories: true } })
+}
+
+export async function moveDirectory(client: PrismaClient, id: Directory["id"], parentId: Directory["id"]): Promise<Directory>{
+    const thisDirectory = await client.directory.findUnique({ where: { id }, include: { files: true, directories: true}})
+
+    if (!thisDirectory) {
+        throw new Error("Invalid Directory")
+    }
+
+    const destinationDirectory = await client.directory.findUnique({
+        where: { id : parentId }
+    });
+
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+    if (!destinationDirectory || destinationDirectory.ancestors.includes(id)) {
+        throw new Error("Invalid target Directory")
+    }
+
+    const previousAncestors = thisDirectory.ancestors;
+    const destinationAncestors = destinationDirectory.ancestors;
+
+    const childFilesOfThisDirectory = await client.file.findMany({ where :{
+        directoryId : id
+    }, select: { id: true, ancestors: true}})
+
+    const descendentFilesOfThisDirectory = await client.file.findMany({
+        where: {
+            ancestors: {
+                has: thisDirectory.id
+            }
+        },
+        select: { id: true, ancestors: true}
+    });
+
+    const descendentDirectoriesOfThisDirectory = await client.directory.findMany( {
+        where: {
+            ancestors: {
+                has: thisDirectory.id
+            }
+        },
+        select: { id: true, ancestors: true }
+    })
+
+    const descendentAncestorUpdates = [
+        ...childFilesOfThisDirectory.map(file => {
+            const updatedAncestors = [
+                ...destinationAncestors,
+                destinationDirectory.id,
+                thisDirectory.id
+            ]
+            return client.file.update({
+                where: { id: file.id },
+                data: { 
+                    ancestors: updatedAncestors,
+                }
+            })
+        }),
+        ...descendentFilesOfThisDirectory.map(file => {
+            const updatedAncestors = [
+                ...new Set([
+                ...file.ancestors.filter(a => !previousAncestors.includes(a)),
+                ...destinationAncestors,
+                destinationDirectory.id,
+                thisDirectory.id
+                ])
+            ]
+            return client.file.update({
+                where: { id: file.id },
+                data: { 
+                    ancestors: updatedAncestors,
+                }
+            })
+        }),
+        ...descendentDirectoriesOfThisDirectory.map(directory => {
+            const updatedAncestors = [
+                ...new Set([
+                    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+                    // eslint-disable-next-line @typescript-eslint/no-unsafe-call
+                    ...directory.ancestors.filter(a => !previousAncestors.includes(a)),
+                    ...destinationAncestors,
+                    destinationDirectory.id,
+                    thisDirectory.id
+                ])
+            ]
+
+            return client.directory.update({
+                where: { id : directory.id},
+                data: { 
+                    ancestors: updatedAncestors
+                }
+            })
+
+        })
+    ]
+
+    const childDirectoryAncestorUpdate = client.directory.updateMany({
+        where: {
+            parentId: thisDirectory.id
+        },
+        data: {
+            ancestors: [...destinationAncestors, destinationDirectory.id, thisDirectory.id]
+        }
+    })
+
+    await client.$transaction([
+        ...descendentAncestorUpdates,
+        childDirectoryAncestorUpdate,
+        client.directory.update({
+            where: { id: thisDirectory.id},
+            data: {
+                parentId: destinationDirectory.id,
+                ancestors: [...destinationAncestors, destinationDirectory.id]
+            }
+        })
+    ])
+
+  return (await client.directory.findUnique({
+      where: {id},
+      include: { directories: true, files: true }
+  })) as Directory
 }
 
 export async function deleteDirectory(
