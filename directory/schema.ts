@@ -2,6 +2,7 @@ import { createModule, gql } from "graphql-modules";
 import { prismaClient } from "../prisma";
 import { Directory } from "@prisma/client"
 import * as directoryService from './service';
+import { Pagination } from "../app";
 
 export const directoryModule = createModule({
     id: 'directory-module',
@@ -19,9 +20,22 @@ export const directoryModule = createModule({
                 ancestors: [String]!
             }
 
+            type DirectoryContentsResult {
+                id: String!
+                name: String!
+                mimeType: String!
+                size: Int!
+                key: String!
+                createsAt: String!
+                updatedAt: String!
+                type: String!
+
+            }
+
             extend type Query {
                 getAllDirectories: [Directory]!
                 getDirectory(id: ID): Directory
+                getDirectoryContents(id: ID!, pagination: PaginationInput, sort: SortInput): [DirectoryContentsResult]!
             }
             type Mutation {
                 createDirectory(name: String!, parentId: String): Directory!
@@ -38,7 +52,11 @@ export const directoryModule = createModule({
               },
              getDirectory: async (_: unknown, { id }: { id: Directory['id']}): Promise<Directory | null> => {
                 return await directoryService.getDirectory(prismaClient(), id)
+             },
+             getDirectoryContents: async (_:unknown, { id, pagination, sort}: {id: Directory['id'], pagination?: Pagination, sort?: directoryService.Sort  }):Promise<directoryService.DirectoryContentsResult[]> =>{
+                return await directoryService.getDirectoryContents(prismaClient(),id, pagination, sort)
              }
+
         },
         Mutation: {
             createDirectory: async (_: unknown, { name, parentId}:{ name: Directory['name'], parentId: Directory['parentId'] }) => {
