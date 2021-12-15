@@ -26,7 +26,7 @@ export const directoryModule = createModule({
                 mimeType: String!
                 size: Int!
                 key: String!
-                createsAt: String!
+                createdAt: String!
                 updatedAt: String!
                 type: String!
 

@@ -10,7 +10,7 @@ export interface DirectoryContentsResult {
     mimeType: string
     size: number 
     key: string 
-    createdAt: Date
+    createdAt: Date 
     updatedAt: Date
     type: "File" | "Directory"
 }
@@ -111,25 +111,35 @@ export async function getDirectoryContents(client: PrismaClient, id: Directory["
     const { field = "name", direction = "ASC" } = sort ?? {};
     const { page = 1 , pageLength = 20} = pagination ?? {};
 
-    const contents = field === 'name' ?
-        [...filesWithVersions, ...directoriesWithVersion].sort((a,b) =>{
-            return a.name > b.name ? 1 : a.name < b.name ? -1 : 0
-        }) : [
-            ...directoriesWithVersion.sort((a,b) => {
-                return a.name > b.name ? 1 : a.name < b.name ? -1 : 0
-            }),
-            ...filesWithVersions.sort((a,b) => {
-                return a[field] > b[field] 
-                ? direction === 'ASC' 
-                ? 1 
-                : -1
-                 : a[field] < b[field] 
-                 ?    direction === 'ASC'
-                 ? - 1
-                 : 1
-                 : 0
-            })
-        ]
+    const contents = field === 'name' 
+    ? [...filesWithVersions, ...directoriesWithVersion].sort((a, b) => {
+        return a.name > b.name
+          ? direction === "ASC"
+            ? 1
+            : -1
+          : a.name < b.name
+          ? direction === "ASC"
+            ? -1
+            : 1
+          : 0
+      })
+    : [
+        ...directoriesWithVersion.sort((a, b) => {
+          return a.name > b.name ? 1 : a.name < b.name ? -1 : 0
+        }),
+        ...filesWithVersions.sort((a, b) => {
+          return a[field] > b[field]
+            ? direction === "ASC"
+              ? 1
+              : -1
+            : a[field] < b[field]
+            ? direction === "ASC"
+              ? -1
+              : 1
+            : 0
+        }),
+      ]
+        
 
         const paginatedContents = contents.slice(
             (page - 1) * pageLength,
