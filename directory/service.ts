@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
-import { Directory, PrismaClient, File, } from '@prisma/client';
+import { Directory, PrismaClient,Prisma, } from '@prisma/client';
 import { Pagination } from '../app';
 import { deleteFile } from '../file';
 
@@ -50,6 +50,64 @@ export async function createDirectory(client: PrismaClient, name: Directory["nam
  
 export async function getDirectory(client: PrismaClient, id: Directory["id"]): Promise<Directory | null> {
     return await client.directory.findUnique({ where: { id }, include: { files: true, directories: true}})
+}
+
+type RawResult = Array<
+    Omit<DirectoryContentsResult, "type"> & { type: "1" | "2"}
+>
+
+
+export async function getDirectoryContentsRaw(client: PrismaClient, id: Directory["id"], pagination?: Pagination, sort?: Sort): Promise<DirectoryContentsResult[]>  {
+    const { field = "name", direction = "ASC" } = sort ?? {};
+    const { page = 1 , pageLength = 20} = pagination ?? {};
+
+    const mainQuey =  Prisma.sql`SELECT f.id, f.name, f.ancestors, f."mimeType", f.size, f.key, EXTRACT(EPOCH FROM f."createdAt") as "createdAt", EXTRACT(EPOCH FROM f."updatedAt") as "updatedAt", '2' as type from
+    (SELECT DISTINCT ON (files.id) * from files
+      INNER JOIN (SELECT "fileId", "mimeType", size, key, "createdAt" as created_at from file_versions) as fv
+        ON fv."fileId" = files.id
+      ORDER BY files.id, fv.created_at DESC) as f
+  WHERE ${id} = ANY(ancestors)
+  UNION ALL
+  SELECT d.id, d.name, d.ancestors, '' as "mimeType", 0 as size, '' as key, EXTRACT(EPOCH FROM d."createdAt") as "createdAt", EXTRACT(EPOCH FROM d."updatedAt") as "updatedAt", '1' as type FROM directories d
+  WHERE ${id} = ANY(ancestors)`;
+
+  const paginationSql = Prisma.sql`LIMIT ${pageLength} OFFSET ${pageLength * (page - 1)}`;
+
+  const directionSql = direction === 'DESC' ? Prisma.sql`DESC` : Prisma.empty;
+
+  const results = field === 'name' ?
+    await client.$queryRaw<RawResult>`
+        ${mainQuey}
+        ORDER BY name ${directionSql}
+        ${paginationSql}
+    `
+    : field === 'size' ?
+    await client.$queryRaw<RawResult>`
+        ${mainQuey}
+        ORDER BY type, size ${directionSql}, name
+        ${paginationSql}
+    `
+    :field === 'createdAt' ?
+    await client.$queryRaw<RawResult>`
+        ${mainQuey}
+        ORDER BY type, "createdAt" ${directionSql}
+        ${paginationSql}
+    `
+    :field === 'updatedAt' ?
+    await client.$queryRaw<RawResult>`
+        ${mainQuey}
+        ORDER BY type, "updatedAt" ${directionSql}
+        ${paginationSql}`
+    :
+    await client.$queryRaw<RawResult>`
+        ${mainQuey}
+        ORDER BY name ${directionSql}
+        ${paginationSql}
+    `
+    return results.map((result) => ({
+        ...result,
+        type: result.type === "1" ? "Directory" : "File",
+    }))
 }
 
 export async function getDirectoryContents(client: PrismaClient, id: Directory["id"], pagination?: Pagination, sort?: Sort): Promise<DirectoryContentsResult[]> {

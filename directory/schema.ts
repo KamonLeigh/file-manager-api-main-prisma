@@ -36,6 +36,8 @@ export const directoryModule = createModule({
                 getAllDirectories: [Directory]!
                 getDirectory(id: ID): Directory
                 getDirectoryContents(id: ID!, pagination: PaginationInput, sort: SortInput): [DirectoryContentsResult]!
+                getDirectoryContentsRaw(id: ID!, pagination: PaginationInput, sort: SortInput): [DirectoryContentsResult]!
+
             }
             type Mutation {
                 createDirectory(name: String!, parentId: String): Directory!
@@ -55,6 +57,9 @@ export const directoryModule = createModule({
              },
              getDirectoryContents: async (_:unknown, { id, pagination, sort}: {id: Directory['id'], pagination?: Pagination, sort?: directoryService.Sort  }):Promise<directoryService.DirectoryContentsResult[]> =>{
                 return await directoryService.getDirectoryContents(prismaClient(),id, pagination, sort)
+             },
+             getDirectoryContentsRaw: async (_:unknown, { id, pagination, sort}: {id: Directory['id'], pagination?: Pagination, sort?: directoryService.Sort  }):Promise<directoryService.DirectoryContentsResult[]> =>{
+                return await directoryService.getDirectoryContentsRaw(prismaClient(),id, pagination, sort)
              }
 
         },
