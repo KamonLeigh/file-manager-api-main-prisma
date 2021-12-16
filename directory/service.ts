@@ -370,3 +370,36 @@ export async function deleteDirectory(
       })
 
   }
+
+  export async function countDirectoryChildren(client: PrismaClient, id: Directory["id"]): Promise<number>{
+    const [ files, directories] = await client.$transaction([
+        client.file.count({
+            where : {
+                ancestors: { has: id}
+            }
+        }),
+        client.directory.count({
+            where: {
+                ancestors: { has: id}
+            }
+        })
+    ])
+
+    return files + directories;
+  }
+
+  export async function getDirectorySize(client: PrismaClient, id: Directory["id"]): Promise<number | null> {
+      const { _sum: { size }} = await client.fileVersion.aggregate({
+          _sum: {
+              size: true
+          },
+          where: {
+              file: {
+                  ancestors: { has: id}
+              }
+          }
+      })
+
+      return size;
+
+  }
