@@ -19,6 +19,7 @@ export const fileVersionModule = createModule({
                 fileId:   ID!
                 createdAt:  String!
                 updatedAt:   String!
+                deletedAt: String 
             }
 
             input CreateFileVersionInput {

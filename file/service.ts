@@ -43,7 +43,7 @@ export async function createFileRecord(client: PrismaClient, file: CreateFileInp
 
  export async function getFile(client: PrismaClient, id: File["id"]):Promise<File | null> {
      return await client.file.findUnique({ where: { id }, include: {
-         version: true
+         version: { where: { deletedAt: null }}
      }})
  }
 
@@ -68,8 +68,8 @@ export async function createFileRecord(client: PrismaClient, file: CreateFileInp
     return await client.file.update({ where: { id }, data: { name }, include: { version: true}})
  }
 
- export async function  deleteFile(client: PrismaClient, id: File["id"]):Promise<boolean> {
-    const fileVersions =  await client.fileVersion.findMany({ where: { fileId: id}})
+ export async function  vdeleteFile(client: PrismaClient, id: File["id"]):Promise<boolean> {
+   /* const fileVersions =  */ await client.fileVersion.findMany({ where: { fileId: id}})
     // const fileVersions = await client.file.findUnique({ where: { id }}).version();
 
     await client.$transaction([
@@ -77,9 +77,9 @@ export async function createFileRecord(client: PrismaClient, file: CreateFileInp
         client.file.delete({ where: { id }})
     ])
 
-    for (const version of fileVersions) {
-        await getBucket().deleteObject(version.key)
-    }
+    // for (const version of fileVersions) {
+    //     await getBucket().deleteObject(version.key)
+    // }
 
     return true;
 
@@ -94,7 +94,7 @@ export async function createFileRecord(client: PrismaClient, file: CreateFileInp
             }
         },
         orderBy: [{ name: "asc"}],
-        include: { version: true }
+        include: { version: { where: { deletedAt: null }}}
     })
  }
     

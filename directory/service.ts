@@ -67,9 +67,12 @@ export async function getDirectoryContentsRaw(client: PrismaClient, id: Director
         ON fv."fileId" = files.id
       ORDER BY files.id, fv.created_at DESC) as f
   WHERE ${id} = ANY(ancestors)
+  AND "deletedAt" IS NULL
   UNION ALL
   SELECT d.id, d.name, d.ancestors, '' as "mimeType", 0 as size, '' as key, EXTRACT(EPOCH FROM d."createdAt") as "createdAt", EXTRACT(EPOCH FROM d."updatedAt") as "updatedAt", '1' as type FROM directories d
-  WHERE ${id} = ANY(ancestors)`;
+  WHERE ${id} = ANY(ancestors)
+  AND "deletedAt" IS NULL
+  `;
 
   const paginationSql = Prisma.sql`LIMIT ${pageLength} OFFSET ${pageLength * (page - 1)}`;
 
@@ -344,14 +347,14 @@ export async function deleteDirectory(
     id: Directory["id"]
   ): Promise<boolean> {
     const files = await client.file.findMany({
-      where: { ancestors: { has: id} },
+      where: { ancestors: { has: id}, deletedAt: null  },
     })
     for (const file of files) {
       await deleteFile(client, file.id)
     }
 
     await client.$transaction([
-        client.directory.deleteMany({ where: { ancestors: { has: id}}}),
+        client.directory.deleteMany({ where: { ancestors: { has: id}, deletedAt: null }}),
         client.directory.delete({ where: { id }})
     ])
 

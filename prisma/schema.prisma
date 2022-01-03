@@ -19,7 +19,7 @@ model File {
   createdAt   DateTime      @default(now())
   updatedAt   DateTime      @updatedAt
   version     FileVersion[]
-
+  deletedAt   DateTime?
   @@map("files")
 }
 
@@ -33,9 +33,13 @@ model FileVersion {
   fileId    String
   createdAt DateTime @default(now())
   updatedAt  DateTime @updatedAt
+  deletedAt   DateTime?      
 
   @@map("file_versions")
 }
+
+// onDelete: Cascade -- this will delete for example related entries on other tables
+// There is also an update feature
 
 model Directory {
   id          String      @id @default(uuid())
@@ -46,6 +50,7 @@ model Directory {
   updatedAt   DateTime    @updatedAt
   files       File[]
   ancestors   String[]
+  deletedAt   DateTime?
   directories Directory[] @relation("DirectoryToDirectory")
 
 
