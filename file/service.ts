@@ -68,7 +68,7 @@ export async function createFileRecord(client: PrismaClient, file: CreateFileInp
     return await client.file.update({ where: { id }, data: { name }, include: { version: true}})
  }
 
- export async function  vdeleteFile(client: PrismaClient, id: File["id"]):Promise<boolean> {
+ export async function  deleteFile(client: PrismaClient, id: File["id"]):Promise<boolean> {
    /* const fileVersions =  */ await client.fileVersion.findMany({ where: { fileId: id}})
     // const fileVersions = await client.file.findUnique({ where: { id }}).version();
 
