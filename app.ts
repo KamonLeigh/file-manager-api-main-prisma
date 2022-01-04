@@ -21,7 +21,7 @@ const mainModule = createModule({
   dirname: __dirname,
   typeDefs: [
     gql`
-      scalar json
+      scalar JSON
 
       interface FileNode {
       id: ID!
