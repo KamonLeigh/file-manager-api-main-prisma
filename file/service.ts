@@ -87,17 +87,23 @@ export async function createFileRecord(client: PrismaClient, file: CreateFileInp
     }
     
     const { ancestors } = directory
+    const updatedHistory = await updateFileHistory(client, id, {
+        directory: directory.id,
+    })
     return await client.file.update({ where: { id }, 
     data: { 
         directoryId,
-        ancestors: [...ancestors, directoryId]
+        ancestors: [...ancestors, directoryId],
+        history: updatedHistory
     },
     include: { version: true}
     })
  }
 
  export async function renameFile(client: PrismaClient, id: File["id"], name: File["name"]): Promise<File> {
-    return await client.file.update({ where: { id }, data: { name }, include: { version: true}})
+     const updatedHistory = await updateFileHistory(client, id, {
+         name })
+    return await client.file.update({ where: { id }, data: { name, history: updatedHistory }, include: { version: true}})
  }
 
  export async function  deleteFile(client: PrismaClient, id: File["id"]):Promise<boolean> {
