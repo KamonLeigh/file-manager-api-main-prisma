@@ -109,8 +109,9 @@ export async function createFileRecord(client: PrismaClient, file: CreateFileInp
  export async function  deleteFile(client: PrismaClient, id: File["id"]):Promise<boolean> {
    /* const fileVersions =  */ await client.fileVersion.findMany({ where: { fileId: id}})
     // const fileVersions = await client.file.findUnique({ where: { id }}).version();
-
+    const updatedHistory = await updateFileHistory(client, id, { delete: true })
     await client.$transaction([
+        client.file.update({ where: { id }, data: { history: updatedHistory }}),
         client.fileVersion.deleteMany({ where: { fileId: id}}),
         client.file.delete({ where: { id }})
     ])

@@ -1,6 +1,7 @@
 import {File,  FileVersion, Prisma, PrismaClient} from '@prisma/client'
 import { Pagination } from '../app';
 import { getBucket } from '../bucket';
+import { updateFileHistory } from '../file'
 import { generateId } from '../util/generators';
 
 
@@ -31,6 +32,13 @@ export async function createFileVersionRecord(client: PrismaClient, fileVersion:
             key
         },
         include: { file: true }
+    })
+
+    await client.file.update({
+        where: { id: file.id},
+        data: {
+            history: await updateFileHistory(client, file.id, { version: JSON.stringify(version)})
+        }
     })
 
     const bucket = getBucket();
@@ -73,3 +81,4 @@ export async function  deleteFileVerdion(client: PrismaClient, id: FileVersion["
     return true;
 
 }
+

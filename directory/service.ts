@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import { Directory, PrismaClient,Prisma, } from '@prisma/client';
+import { version } from 'graphql';
 import { Pagination } from '../app';
 import { deleteFile } from '../file';
 
@@ -243,7 +244,7 @@ export async function moveDirectory(client: PrismaClient, id: Directory["id"], p
 
     const childFilesOfThisDirectory = await client.file.findMany({ where :{
         directoryId : id
-    }, select: { id: true, ancestors: true}})
+    }, select: { id: true, ancestors: true, history: true }})
 
     const descendentFilesOfThisDirectory = await client.file.findMany({
         where: {
@@ -251,7 +252,7 @@ export async function moveDirectory(client: PrismaClient, id: Directory["id"], p
                 has: thisDirectory.id
             }
         },
-        select: { id: true, ancestors: true}
+        select: { id: true, ancestors: true, history: true}
     });
 
     const descendentDirectoriesOfThisDirectory = await client.directory.findMany( {
@@ -274,6 +275,10 @@ export async function moveDirectory(client: PrismaClient, id: Directory["id"], p
                 where: { id: file.id },
                 data: { 
                     ancestors: updatedAncestors,
+                    history: [
+                        ...(file.history && typeof file.history === 'object' && Array.isArray(file.history) ? file.history : []),
+                        { ancestors: JSON.stringify(updatedAncestors)}
+                    ]
                 }
             })
         }),
@@ -290,6 +295,10 @@ export async function moveDirectory(client: PrismaClient, id: Directory["id"], p
                 where: { id: file.id },
                 data: { 
                     ancestors: updatedAncestors,
+                    history: [
+                        ...(file.history && typeof file.history === 'object' && Array.isArray(file.history) ? file.history : []),
+                        { ancestors: JSON.stringify(updatedAncestors)}
+                    ]
                 }
             })
         }),
